@@ -470,6 +470,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
+<script src="audio.js"></script>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
@@ -491,28 +492,7 @@ let floatingTexts = [];
 let eggBounce = [];
 let shakeTimer = 0;
 
-// ─── Sound Effects ────────────────────────────────────────────────────────────
-const sounds = {
-  catch: new Audio('assets/sounds/catch.wav'),
-  break: new Audio('assets/sounds/break.wav'),
-  life: new Audio('assets/sounds/life.wav'),
-  gameover: new Audio('assets/sounds/gameover.wav'),
-  levelup: new Audio('assets/sounds/levelup.wav')
-};
 
-sounds.catch.volume = 0.8;
-sounds.break.volume = 0.8;
-sounds.life.volume = 0.7;
-sounds.gameover.volume = 0.8;
-sounds.levelup.volume = 0.8;
-
-function playSound(name) {
-  const sound = sounds[name];
-  if (sound) {
-    sound.currentTime = 0;
-    sound.play().catch(err => console.warn("Sound play blocked:", err));
-  }
-}
 
 // Chicken sequencer state
 let currentChickenIdx = 0;
@@ -1362,73 +1342,7 @@ window.addEventListener('keydown', e => {
   }
 });
 
-// YouTube background music player logic
-let ytPlayer;
-let isMusicMuted = false;
-let musicStarted = false;
 
-// Load YouTube IFrame Player API dynamically
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-function onYouTubeIframeAPIReady() {
-  ytPlayer = new YT.Player('yt-player', {
-    videoId: '28rkMMVdtrg',
-    playerVars: {
-      autoplay: 0,
-      controls: 0,
-      disablekb: 1,
-      fs: 0,
-      loop: 1,
-      playlist: '28rkMMVdtrg', // Loop video ID
-      modestbranding: 1,
-      rel: 0
-    },
-    events: {
-      onReady: onPlayerReady
-    }
-  });
-}
-
-function onPlayerReady(event) {
-  event.target.setVolume(70); // 30% volume
-}
-
-function startMusic() {
-  if (ytPlayer && typeof ytPlayer.playVideo === 'function' && !musicStarted) {
-    ytPlayer.playVideo();
-    musicStarted = true;
-    document.getElementById('music-btn').textContent = '🎵';
-  }
-}
-
-function toggleMusic() {
-  if (!musicStarted) {
-    startMusic();
-    return;
-  }
-
-  if (ytPlayer && typeof ytPlayer.mute === 'function') {
-    if (isMusicMuted) {
-      ytPlayer.unmute();
-      isMusicMuted = false;
-      document.getElementById('music-btn').textContent = '🎵';
-      document.getElementById('music-btn').title = 'Mute Music';
-    } else {
-      ytPlayer.mute();
-      isMusicMuted = true;
-      document.getElementById('music-btn').textContent = '🔇';
-      document.getElementById('music-btn').title = 'Unmute Music';
-    }
-  }
-}
-
-document.getElementById('music-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleMusic();
-});
 
 // ─── MediaPipe Hand Tracking ──────────────────────────────────────────────────
 let handTrackingReady = false;
