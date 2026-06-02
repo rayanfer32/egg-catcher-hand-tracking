@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐣 Egg Catcher — Hand Tracking Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  #game-wrapper {
+    position: relative;
+    width: 900px;
+    height: 600px;
+  }
+
+  #gameCanvas {
+    border-radius: 16px;
+    display: block;
+    cursor: none;
+  }
+
+  #webcam-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 200px;
+    height: 150px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: #111;
+    z-index: 100;
+  }
+
+  #webcam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    display: block;
+  }
+
+  #handCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    pointer-events: none;
+  }
+
+  #webcam-label {
+    position: absolute;
+    bottom: 6px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    font-family: 'Nunito', sans-serif;
+  }
+
+  #cam-status {
+    position: fixed;
+    bottom: 178px;
+    right: 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Nunito', sans-serif;
+    text-align: right;
+    z-index: 100;
+  }
+
+  #cam-status.active { color: #4ade80; }
+  #cam-status.inactive { color: #f87171; }
+
+  #ui-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #start-screen, #gameover-screen {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,10,20,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+    pointer-events: all;
+  }
+
+  #gameover-screen { display: none; }
+
+  .screen-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 64px;
+    color: #fde68a;
+    text-shadow: 0 0 30px rgba(253,230,138,0.5), 4px 4px 0 #92400e;
+    margin-bottom: 8px;
+    animation: titleBounce 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes titleBounce {
+    from { transform: translateY(0) rotate(-2deg); }
+    to { transform: translateY(-8px) rotate(2deg); }
+  }
+
+  .screen-subtitle {
+    font-size: 18px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    border: none;
+    border-radius: 50px;
+    padding: 16px 48px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(239,68,68,0.4), 0 4px 0 rgba(0,0,0,0.3);
+    transition: all 0.15s;
+    pointer-events: all;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+    margin-bottom: 16px;
+  }
+
+  .btn-start:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(239,68,68,0.5), 0 4px 0 rgba(0,0,0,0.3);
+  }
+
+  .btn-start:active {
+    transform: translateY(1px);
+    box-shadow: 0 4px 16px rgba(239,68,68,0.4), 0 2px 0 rgba(0,0,0,0.3);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 10px 32px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.15s;
+    pointer-events: all;
+  }
+
+  .btn-secondary:hover {
+    border-color: rgba(255,255,255,0.6);
+    color: white;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .instructions {
+    margin-top: 28px;
+    display: flex;
+    gap: 24px;
+  }
+
+  .instr-item {
+    text-align: center;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+  }
+
+  .instr-icon { font-size: 28px; display: block; margin-bottom: 4px; }
+
+  #score-display {
+    position: absolute;
+    top: 18px;
+    left: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: all;
+  }
+
+  .score-badge {
+    background: rgba(253,230,138,0.15);
+    border: 2px solid rgba(253,230,138,0.4);
+    border-radius: 10px;
+    padding: 6px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px;
+    color: #fde68a;
+    letter-spacing: 1px;
+  }
+
+  .score-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px;
+    color: white;
+    min-width: 36px;
+  }
+
+  #lives-display {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    display: flex;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .life-egg {
+    width: 28px;
+    height: 36px;
+    transition: all 0.3s;
+  }
+
+  .life-egg.lost { opacity: 0.15; transform: scale(0.8); }
+
+  #level-display {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Fredoka One', cursive;
+    font-size: 15px;
+    color: rgba(255,255,255,0.5);
+    pointer-events: none;
+  }
+
+  #gameover-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 80px;
+    color: #fde68a;
+    text-shadow: 0 0 40px rgba(253,230,138,0.4), 4px 4px 0 #92400e;
+    line-height: 1;
+  }
+
+  #gameover-label {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+  }
+
+  #gameover-best {
+    font-size: 15px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 32px;
+  }
+
+  #gameover-best span {
+    color: #86efac;
+    font-weight: 800;
+  }
+
+  #combo-display {
+    position: absolute;
+    top: 70px;
+    left: 22px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    color: #fb923c;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  #combo-display.active { opacity: 1; }
+
+  .cam-prompt {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 12px;
+    font-size: 13px;
+    color: rgba(147,197,253,0.9);
+    text-align: center;
+    max-width: 360px;
+    line-height: 1.6;
+  }
+
+  .fallback-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+  }
+</style>
+</head>
+<body>
+
+<div id="game-wrapper">
+  <canvas id="gameCanvas" width="900" height="600"></canvas>
+
+  <div id="ui-overlay">
+    <div id="score-display">
+      <div class="score-badge">
+        <span class="score-label">SCORE</span>
+        <span class="score-value" id="scoreVal">0</span>
+      </div>
+    </div>
+
+    <div id="level-display">LEVEL <span id="levelVal">1</span></div>
+
+    <div id="lives-display" id="livesDisplay"></div>
+
+    <div id="combo-display">🔥 <span id="comboVal">2</span>x COMBO!</div>
+
+    <div id="start-screen">
+      <div class="screen-title">🐣 EGG CATCHER</div>
+      <div class="screen-subtitle">Use your hand to move the basket<br>and catch every egg!</div>
+      <button class="btn-start" id="startBtn">PLAY!</button>
+      <button class="btn-secondary" id="mouseBtn">Play with Mouse Instead</button>
+      <div class="instructions">
+        <div class="instr-item"><span class="instr-icon">🤚</span>Move hand left/right</div>
+        <div class="instr-item"><span class="instr-icon">🥚</span>Catch golden eggs</div>
+        <div class="instr-item"><span class="instr-icon">💥</span>Don't drop eggs!</div>
+      </div>
+      <div class="cam-prompt">
+        📷 Camera access required for hand tracking.<br>
+        Your camera feed stays <strong>on your device</strong> — never uploaded.
+      </div>
+      <div class="fallback-note">No camera? Use mouse/touch to move the basket.</div>
+    </div>
+
+    <div id="gameover-screen">
+      <div style="text-align:center;">
+        <div id="gameover-label">FINAL SCORE</div>
+        <div id="gameover-score">0</div>
+        <div id="gameover-best">Best: <span id="bestVal">0</span></div>
+        <button class="btn-start" id="restartBtn">PLAY AGAIN!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="webcam-container" style="display:none;">
+  <video id="webcam" autoplay playsinline muted></video>
+  <canvas id="handCanvas"></canvas>
+  <div id="webcam-label">Hand Tracking Active</div>
+</div>
+
+<div id="cam-status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ─── Game State ───────────────────────────────────────────────────────────────
+let state = 'menu'; // menu | playing | gameover
+let score = 0, bestScore = parseInt(localStorage.getItem('eggBest')||'0');
+let lives = 3, level = 1;
+let combo = 0, comboTimer = 0;
+let useHandTracking = false;
+let handX = W / 2;
+let mouseX = W / 2;
+let frameCount = 0;
+let particles = [];
+let floatingTexts = [];
+let eggBounce = [];
+let shakeTimer = 0;
+
+// Chicken sequencer state
+let currentChickenIdx = 0;
+let eggsToLay = 0;
+let layDelayTimer = 0;
+let sequenceDirection = 1; // 1 = right, -1 = left
+
+// ─── Assets (drawn procedurally) ─────────────────────────────────────────────
+// Sky gradient
+const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+skyGrad.addColorStop(0, '#87CEEB');
+skyGrad.addColorStop(0.6, '#B0E0FF');
+skyGrad.addColorStop(1, '#7EC850');
+
+// ─── Chickens ─────────────────────────────────────────────────────────────────
+const NUM_CHICKENS = 5;
+const chickens = Array.from({length: NUM_CHICKENS}, (_, i) => ({
+  x: 80 + i * 165,
+  y: 88,
+  bobOffset: Math.random() * Math.PI * 2,
+  active: true
+}));
+
+// ─── Eggs ─────────────────────────────────────────────────────────────────────
+let eggs = [];
+const EGG_TYPES = [
+  { color: '#fffde7', stroke: '#e0c97a', points: 1, speed: 1, label: '' },
+  { color: '#ffd700', stroke: '#b8860b', points: 3, speed: 1.2, label: '✨', golden: true },
+  { color: '#ff6b9d', stroke: '#c0396b', points: 2, speed: 1.4, label: '💗', bonus: true },
+];
+
+// ─── Basket ───────────────────────────────────────────────────────────────────
+const basket = {
+  x: W / 2,
+  y: H - 70,
+  width: 90,
+  height: 60,
+  targetX: W / 2
+};
+
+// ─── Clouds ───────────────────────────────────────────────────────────────────
+const clouds = Array.from({length: 6}, (_, i) => ({
+  x: (i * 160 + 50) % W,
+  y: 120 + Math.random() * 120,
+  w: 80 + Math.random() * 60,
+  speed: 0.2 + Math.random() * 0.3,
+  opacity: 0.5 + Math.random() * 0.4
+}));
+
+// ─── Grass details ────────────────────────────────────────────────────────────
+const grassBlades = Array.from({length: 60}, () => ({
+  x: Math.random() * W,
+  h: 8 + Math.random() * 14,
+  lean: (Math.random() - 0.5) * 0.4
+}));
+
+// ─── Drawing helpers ──────────────────────────────────────────────────────────
+function drawBackground() {
+  // Sky
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Mountains
+  ctx.fillStyle = '#8facc8';
+  ctx.beginPath();
+  ctx.moveTo(0, H - 120);
+  ctx.lineTo(120, H - 280);
+  ctx.lineTo(240, H - 180);
+  ctx.lineTo(360, H - 320);
+  ctx.lineTo(480, H - 200);
+  ctx.lineTo(600, H - 350);
+  ctx.lineTo(720, H - 210);
+  ctx.lineTo(900, H - 290);
+  ctx.lineTo(900, H - 120);
+  ctx.closePath();
+  ctx.fill();
+
+  // Mountains lighter
+  ctx.fillStyle = '#a8c4d8';
+  ctx.beginPath();
+  ctx.moveTo(0, H - 110);
+  ctx.lineTo(80, H - 220);
+  ctx.lineTo(200, H - 140);
+  ctx.lineTo(330, H - 260);
+  ctx.lineTo(460, H - 160);
+  ctx.lineTo(560, H - 230);
+  ctx.lineTo(700, H - 160);
+  ctx.lineTo(900, H - 200);
+  ctx.lineTo(900, H - 110);
+  ctx.closePath();
+  ctx.fill();
+
+  // Clouds
+  clouds.forEach(c => {
+    ctx.save();
+    ctx.globalAlpha = c.opacity;
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, c.w, 22, 0, 0, Math.PI * 2);
+    ctx.ellipse(c.x - c.w * 0.3, c.y + 8, c.w * 0.5, 16, 0, 0, Math.PI * 2);
+    ctx.ellipse(c.x + c.w * 0.3, c.y + 5, c.w * 0.45, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Ground
+  ctx.fillStyle = '#5aad3a';
+  ctx.fillRect(0, H - 100, W, 100);
+
+  // Ground highlight
+  ctx.fillStyle = '#6dc44a';
+  ctx.fillRect(0, H - 100, W, 18);
+
+  // Grass blades
+  ctx.strokeStyle = '#4e9c30';
+  ctx.lineWidth = 1.5;
+  grassBlades.forEach(g => {
+    ctx.save();
+    ctx.translate(g.x, H - 100);
+    ctx.rotate(g.lean);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(g.lean * 10, -g.h * 0.5, 0, -g.h);
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // Trees
+  drawTree(80, H - 100, 50);
+  drawTree(820, H - 100, 60);
+  drawTree(160, H - 100, 35);
+
+  // Hen shelf
+  ctx.fillStyle = '#6b3a1f';
+  ctx.fillRect(0, 160, W, 28);
+  ctx.fillStyle = '#7d4a2a';
+  ctx.fillRect(0, 160, W, 8);
+
+  // Nest straw for each chicken
+  chickens.forEach(c => {
+    ctx.fillStyle = '#c8a040';
+    ctx.beginPath();
+    ctx.ellipse(c.x, 168, 36, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Straw lines
+    ctx.strokeStyle = '#a07828';
+    ctx.lineWidth = 1;
+    for(let i = -3; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(c.x + i*5 - 15, 165);
+      ctx.lineTo(c.x + i*5, 172);
+      ctx.stroke();
+    }
+  });
+}
+
+function drawTree(x, groundY, size) {
+  ctx.fillStyle = '#6b3a1f';
+  ctx.fillRect(x - 6, groundY - size * 1.2, 12, size * 1.2);
+  ctx.fillStyle = '#3a8c22';
+  ctx.beginPath();
+  ctx.arc(x, groundY - size * 1.3, size * 0.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#4da030';
+  ctx.beginPath();
+  ctx.arc(x - size*0.2, groundY - size * 1.5, size * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawChicken(c, t, isActive, eggsLeft) {
+  let bob = Math.sin(t * 0.05 + c.bobOffset) * 2;
+  let scale = 1;
+  let angle = 0;
+
+  if (isActive && eggsLeft > 0 && state === 'playing') {
+    // Excited/vibrating laying animation
+    bob += Math.sin(t * 0.4) * 1.5;
+    scale = 1.06 + Math.sin(t * 0.25) * 0.04;
+    angle = Math.sin(t * 0.3) * 0.03;
+  }
+
+  const cx = c.x, cy = c.y + bob;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.rotate(angle);
+
+  // Body
+  ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 22, 18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // Wing detail
+  ctx.fillStyle = '#e8e8e8';
+  ctx.beginPath();
+  ctx.ellipse(8, 2, 12, 8, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#f5f5f5';
+  ctx.beginPath();
+  ctx.arc(0, -22, 13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // Comb (red)
+  ctx.fillStyle = '#e53e3e';
+  for(let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(-4 + i * 4, -34 + (i === 1 ? -3 : 0), 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Wattle
+  ctx.fillStyle = '#e53e3e';
+  ctx.beginPath();
+  ctx.ellipse(3, -16, 4, 6, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#f6a623';
+  ctx.beginPath();
+  ctx.moveTo(12, -22);
+  ctx.lineTo(20, -24);
+  ctx.lineTo(20, -20);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eye
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.arc(6, -24, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(7, -25, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Feet
+  ctx.strokeStyle = '#f6a623';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-8, 16); ctx.lineTo(-8, 24);
+  ctx.moveTo(-8, 24); ctx.lineTo(-14, 24);
+  ctx.moveTo(-8, 24); ctx.lineTo(-8, 28);
+  ctx.moveTo(8, 16); ctx.lineTo(8, 24);
+  ctx.moveTo(8, 24); ctx.lineTo(2, 24);
+  ctx.moveTo(8, 24); ctx.lineTo(14, 24);
+  ctx.stroke();
+
+  // Highlight laying indicator
+  if (isActive && eggsLeft > 0 && state === 'playing') {
+    // Draw a small glowing ring under the chicken to highlight it
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 30, 8, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawEgg(egg) {
+  const type = EGG_TYPES[egg.type];
+  ctx.save();
+  ctx.translate(egg.x, egg.y);
+  ctx.rotate(egg.rot || 0);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(2, egg.h * 0.45 + 3, egg.w * 0.4, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Egg body
+  const grad = ctx.createRadialGradient(-egg.w * 0.2, -egg.h * 0.2, 1, 0, 0, egg.w * 0.8);
+  grad.addColorStop(0, lightenColor(type.color, 30));
+  grad.addColorStop(1, type.color);
+  ctx.fillStyle = grad;
+  drawEggShape(ctx, 0, 0, egg.w, egg.h);
+  ctx.fill();
+
+  ctx.strokeStyle = type.stroke;
+  ctx.lineWidth = 1.5;
+  drawEggShape(ctx, 0, 0, egg.w, egg.h);
+  ctx.stroke();
+
+  // Golden shimmer
+  if(type.golden) {
+    ctx.strokeStyle = 'rgba(255,255,180,0.7)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(-egg.w * 0.2, -egg.h * 0.1, egg.w * 0.15, egg.h * 0.25, -0.5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawEggShape(ctx, x, y, w, h) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - h * 0.5);
+  ctx.bezierCurveTo(x + w * 0.5, y - h * 0.5, x + w * 0.5, y, x + w * 0.35, y + h * 0.35);
+  ctx.bezierCurveTo(x + w * 0.2, y + h * 0.5, x - w * 0.2, y + h * 0.5, x - w * 0.35, y + h * 0.35);
+  ctx.bezierCurveTo(x - w * 0.5, y, x - w * 0.5, y - h * 0.5, x, y - h * 0.5);
+  ctx.closePath();
+}
+
+function drawBasket() {
+  const bx = basket.x, by = basket.y;
+  const bw = basket.width, bh = basket.height;
+
+  // Basket shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(bx, by + bh * 0.45, bw * 0.5, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Handle
+  ctx.strokeStyle = '#8B5E3C';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(bx, by - bh * 0.1, bw * 0.35, Math.PI, 0);
+  ctx.stroke();
+
+  // Basket body (trapezoid)
+  ctx.fillStyle = '#c47c3a';
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.5, by - bh * 0.2);
+  ctx.lineTo(bx - bw * 0.4, by + bh * 0.45);
+  ctx.lineTo(bx + bw * 0.4, by + bh * 0.45);
+  ctx.lineTo(bx + bw * 0.5, by - bh * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Weave lines horizontal
+  ctx.strokeStyle = '#a3611e';
+  ctx.lineWidth = 1.5;
+  for(let row = 0; row < 4; row++) {
+    const t = row / 3;
+    const y1 = by - bh * 0.2 + bh * 0.65 * t;
+    const leftX = bx - bw * 0.5 + bw * 0.1 * t;
+    const rightX = bx + bw * 0.5 - bw * 0.1 * t;
+    ctx.beginPath();
+    ctx.moveTo(leftX, y1);
+    ctx.lineTo(rightX, y1);
+    ctx.stroke();
+  }
+
+  // Weave lines vertical
+  for(let col = -3; col <= 3; col++) {
+    ctx.beginPath();
+    ctx.moveTo(bx + col * (bw * 0.14), by - bh * 0.2);
+    ctx.lineTo(bx + col * (bw * 0.11), by + bh * 0.45);
+    ctx.stroke();
+  }
+
+  // Rim
+  ctx.fillStyle = '#a3611e';
+  ctx.fillRect(bx - bw * 0.52, by - bh * 0.2 - 4, bw * 1.04, 8);
+  ctx.beginPath();
+  ctx.roundRect(bx - bw * 0.52, by - bh * 0.2 - 4, bw * 1.04, 8, 4);
+  ctx.fill();
+}
+
+function drawCrack(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  // Broken egg pieces
+  ctx.fillStyle = '#fffde7';
+  ctx.beginPath();
+  ctx.moveTo(-14, 0);
+  ctx.lineTo(-8, -10);
+  ctx.lineTo(0, -4);
+  ctx.lineTo(8, -12);
+  ctx.lineTo(14, 0);
+  ctx.lineTo(8, 8);
+  ctx.lineTo(0, 4);
+  ctx.lineTo(-8, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#e0c97a';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Yolk
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(0, 2, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffed4a';
+  ctx.beginPath();
+  ctx.arc(-1, 1, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function lightenColor(hex, amount) {
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (num >> 16) + amount);
+  const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+  const b = Math.min(255, (num & 0xff) + amount);
+  return `rgb(${r},${g},${b})`;
+}
+
+// ─── Particles ───────────────────────────────────────────────────────────────
+function spawnCatchParticles(x, y, color) {
+  for(let i = 0; i < 12; i++) {
+    const angle = (Math.PI * 2 / 12) * i;
+    const speed = 2 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color,
+      life: 1,
+      size: 3 + Math.random() * 4,
+      type: 'star'
+    });
+  }
+}
+
+function spawnBreakParticles(x, y) {
+  for(let i = 0; i < 8; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: -Math.random() * 5,
+      color: '#ffd700',
+      life: 1,
+      size: 4 + Math.random() * 6,
+      type: 'yolk',
+      gravity: 0.3
+    });
+  }
+}
+
+function updateParticles() {
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if(p.gravity) p.vy += p.gravity;
+    p.vx *= 0.95;
+    p.life -= 0.03;
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    if(p.type === 'star') {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+
+// ─── Floating text ────────────────────────────────────────────────────────────
+function spawnFloatText(x, y, text, color) {
+  floatingTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
+}
+
+function updateFloatTexts() {
+  floatingTexts = floatingTexts.filter(t => t.life > 0);
+  floatingTexts.forEach(t => { t.y += t.vy; t.life -= 0.02; });
+}
+
+function drawFloatTexts() {
+  floatingTexts.forEach(t => {
+    ctx.save();
+    ctx.globalAlpha = t.life;
+    ctx.fillStyle = t.color;
+    ctx.font = `bold 22px 'Fredoka One', cursive`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(t.text, t.x, t.y);
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.restore();
+  });
+}
+
+// ─── Game Logic ───────────────────────────────────────────────────────────────
+function getLevelConfig() {
+  return {
+    eggSpeed: 1.5 + (level - 1) * 0.3,
+    spawnRate: Math.max(40, 90 - (level - 1) * 8),
+    goldenChance: Math.min(0.3, 0.1 + (level - 1) * 0.03)
+  };
+}
+
+function spawnEgg(chickenIdx) {
+  const chicken = chickens[chickenIdx];
+  const cfg = getLevelConfig();
+  let type = 0;
+  const r = Math.random();
+  if(r < cfg.goldenChance) type = 1;
+  else if(r < cfg.goldenChance + 0.15) type = 2;
+  const eggType = EGG_TYPES[type];
+  eggs.push({
+    x: chicken.x,
+    y: chicken.y + 10,
+    w: 14,
+    h: 18,
+    vy: (cfg.eggSpeed + Math.random() * 0.5) * eggType.speed,
+    type,
+    rot: (Math.random() - 0.5) * 0.3,
+    rotV: (Math.random() - 0.5) * 0.05,
+    id: Math.random()
+  });
+}
+
+let eggCracks = [];
+
+function update() {
+  if(state !== 'playing') return;
+  frameCount++;
+
+  const cfg = getLevelConfig();
+
+  // Move clouds
+  clouds.forEach(c => { c.x = (c.x + c.speed) % (W + 100); });
+
+  // Basket movement
+  const targetX = useHandTracking ? handX : mouseX;
+  basket.targetX = Math.max(basket.width / 2, Math.min(W - basket.width / 2, targetX));
+  basket.x += (basket.targetX - basket.x) * 0.18;
+
+  // Spawn eggs in sequence
+  if (layDelayTimer > 0) {
+    layDelayTimer--;
+  } else {
+    if (eggsToLay > 0) {
+      // Current chicken lays an egg!
+      spawnEgg(currentChickenIdx);
+      eggsToLay--;
+      
+      if (eggsToLay > 0) {
+        // If there's another egg to lay, set a brief delay
+        layDelayTimer = Math.max(25, 45 - (level - 1) * 2);
+      } else {
+        // Chicken is done laying its eggs. Move to the next chicken in sequence.
+        currentChickenIdx += sequenceDirection;
+        if (currentChickenIdx >= NUM_CHICKENS) {
+          currentChickenIdx = NUM_CHICKENS - 2; // Bounce back
+          sequenceDirection = -1;
+        } else if (currentChickenIdx < 0) {
+          currentChickenIdx = 1; // Bounce forward
+          sequenceDirection = 1;
+        }
+        
+        // Randomly choose 1 or 2 eggs for the next chicken
+        eggsToLay = Math.random() < 0.5 ? 1 : 2;
+        
+        // Set the delay before the next chicken starts laying (giving player time to move)
+        layDelayTimer = cfg.spawnRate + Math.random() * 15;
+      }
+    } else {
+      // Fallback
+      eggsToLay = Math.random() < 0.5 ? 1 : 2;
+      layDelayTimer = cfg.spawnRate;
+    }
+  }
+
+  // Update eggs
+  eggs.forEach(egg => {
+    egg.y += egg.vy;
+    egg.rot += egg.rotV;
+
+    // Catch check
+    const bLeft = basket.x - basket.width * 0.45;
+    const bRight = basket.x + basket.width * 0.45;
+    const bTop = basket.y - basket.height * 0.2;
+
+    if(egg.y + egg.h / 2 >= bTop && egg.y - egg.h / 2 < bTop + 20 &&
+       egg.x >= bLeft && egg.x <= bRight && !egg.caught) {
+      egg.caught = true;
+      combo++;
+      comboTimer = 120;
+      const type = EGG_TYPES[egg.type];
+      const pts = type.points * (combo >= 3 ? 2 : 1);
+      score += pts;
+      document.getElementById('scoreVal').textContent = score;
+      spawnCatchParticles(egg.x, egg.y, type.golden ? '#ffd700' : type.bonus ? '#ff6b9d' : '#a8e6cf');
+      const label = combo >= 3 ? `+${pts} 🔥` : `+${pts}`;
+      spawnFloatText(egg.x, egg.y - 20, label, type.golden ? '#ffd700' : '#ffffff');
+
+      if(score > 0 && score % 30 === 0) {
+        level = Math.min(10, Math.floor(score / 30) + 1);
+        document.getElementById('levelVal').textContent = level;
+        spawnFloatText(W/2, H/2 - 60, `LEVEL ${level}!`, '#fbbf24');
+      }
+    }
+  });
+
+  // Combo timer
+  if(comboTimer > 0) {
+    comboTimer--;
+    document.getElementById('combo-display').classList.add('active');
+    document.getElementById('comboVal').textContent = combo;
+  } else {
+    combo = 0;
+    document.getElementById('combo-display').classList.remove('active');
+  }
+
+  // Remove caught eggs
+  const droppedEggs = eggs.filter(e => !e.caught && e.y - e.h / 2 > H - 95);
+  droppedEggs.forEach(e => {
+    lives = Math.max(0, lives - 1);
+    updateLives();
+    shakeTimer = 20;
+    eggCracks.push({ x: e.x, y: H - 110, life: 180 });
+    spawnBreakParticles(e.x, H - 110);
+    spawnFloatText(e.x, H - 140, '💔 -1', '#ef4444');
+    if(lives <= 0) endGame();
+  });
+
+  eggs = eggs.filter(e => e.caught || e.y - e.h / 2 <= H - 95);
+  eggCracks = eggCracks.filter(c => { c.life--; return c.life > 0; });
+
+  updateParticles();
+  updateFloatTexts();
+
+  if(shakeTimer > 0) shakeTimer--;
+}
+
+function updateLives() {
+  const container = document.getElementById('lives-display');
+  container.innerHTML = '';
+  for(let i = 0; i < 3; i++) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', `life-egg ${i >= lives ? 'lost' : ''}`);
+    svg.setAttribute('viewBox', '-14 -18 28 36');
+    svg.setAttribute('width', '28');
+    svg.setAttribute('height', '36');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M0,-14 C7,-14 12,-7 12,4 C12,14 7,17 0,17 C-7,17 -12,14 -12,4 C-12,-7 -7,-14 0,-14 Z');
+    path.setAttribute('fill', i < lives ? '#ffd700' : '#555');
+    path.setAttribute('stroke', i < lives ? '#b8860b' : '#333');
+    path.setAttribute('stroke-width', '1.5');
+    svg.appendChild(path);
+    container.appendChild(svg);
+  }
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  ctx.save();
+  if(shakeTimer > 0) {
+    ctx.translate(
+      (Math.random() - 0.5) * 6 * (shakeTimer / 20),
+      (Math.random() - 0.5) * 6 * (shakeTimer / 20)
+    );
+  }
+
+  drawBackground();
+
+  // Egg cracks on ground
+  eggCracks.forEach(c => {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, c.life / 60);
+    drawCrack(c.x, c.y);
+    ctx.restore();
+  });
+
+  // Chickens
+  chickens.forEach((c, i) => drawChicken(c, frameCount, i === currentChickenIdx, eggsToLay));
+
+  // Eggs
+  eggs.forEach(e => drawEgg(e));
+
+  // Basket
+  drawBasket();
+
+  // Particles & float texts
+  drawParticles();
+  drawFloatTexts();
+
+  // Hand tracking cursor dot
+  if(useHandTracking && state === 'playing') {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.beginPath();
+    ctx.arc(handX, basket.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,100,100,0.9)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function gameLoop() {
+  update();
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+// ─── Game flow ────────────────────────────────────────────────────────────────
+function startGame(withHand) {
+  useHandTracking = withHand;
+  score = 0;
+  lives = 3;
+  level = 1;
+  combo = 0;
+  comboTimer = 0;
+  eggs = [];
+  particles = [];
+  floatingTexts = [];
+  eggCracks = [];
+  frameCount = 0;
+  basket.x = W / 2;
+  document.getElementById('scoreVal').textContent = '0';
+  document.getElementById('levelVal').textContent = '1';
+  updateLives();
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('gameover-screen').style.display = 'none';
+  currentChickenIdx = Math.floor(Math.random() * NUM_CHICKENS);
+  eggsToLay = Math.random() < 0.5 ? 1 : 2;
+  layDelayTimer = 40; // Short initial delay
+  sequenceDirection = Math.random() < 0.5 ? 1 : -1;
+  state = 'playing';
+}
+
+function endGame() {
+  state = 'gameover';
+  if(score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('eggBest', bestScore);
+  }
+  document.getElementById('gameover-score').textContent = score;
+  document.getElementById('bestVal').textContent = bestScore;
+  document.getElementById('gameover-screen').style.display = 'flex';
+}
+
+// ─── Controls ─────────────────────────────────────────────────────────────────
+canvas.addEventListener('mousemove', e => {
+  if(!useHandTracking) {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (W / rect.width);
+  }
+});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if(!useHandTracking) {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.touches[0].clientX - rect.left) * (W / rect.width);
+  }
+}, { passive: false });
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  initHandTracking(() => startGame(true));
+});
+
+document.getElementById('mouseBtn').addEventListener('click', () => {
+  startGame(false);
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  startGame(useHandTracking);
+});
+
+// ─── MediaPipe Hand Tracking ──────────────────────────────────────────────────
+let handTrackingReady = false;
+let camStream = null;
+
+function initHandTracking(callback) {
+  const statusEl = document.getElementById('cam-status');
+  statusEl.textContent = '📷 Requesting camera...';
+  statusEl.className = '';
+
+  navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } })
+    .then(stream => {
+      camStream = stream;
+      const webcamEl = document.getElementById('webcam');
+      webcamEl.srcObject = stream;
+      document.getElementById('webcam-container').style.display = 'block';
+
+      statusEl.textContent = '✅ Hand tracking active';
+      statusEl.className = 'active';
+
+      setupMediaPipe(webcamEl, callback);
+    })
+    .catch(err => {
+      console.warn('Camera error:', err);
+      statusEl.textContent = '⚠️ No camera — using mouse';
+      statusEl.className = 'inactive';
+      callback && callback();
+      // Fallback to mouse
+      startGame(false);
+    });
+}
+
+function setupMediaPipe(videoEl, callback) {
+  if(typeof Hands === 'undefined') {
+    console.warn('MediaPipe not loaded, using mouse');
+    callback && callback();
+    startGame(false);
+    return;
+  }
+
+  const hands = new Hands({
+    locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`
+  });
+
+  hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 0,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.5
+  });
+
+  const handDisplayCanvas = document.getElementById('handCanvas');
+  const hdCtx = handDisplayCanvas.getContext('2d');
+
+  hands.onResults(results => {
+    handDisplayCanvas.width = handDisplayCanvas.offsetWidth;
+    handDisplayCanvas.height = handDisplayCanvas.offsetHeight;
+    hdCtx.clearRect(0, 0, handDisplayCanvas.width, handDisplayCanvas.height);
+
+    if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      const landmarks = results.multiHandLandmarks[0];
+
+      // Use wrist (0) + middle finger base (9) for stable X
+      const palmX = (landmarks[0].x + landmarks[5].x + landmarks[9].x) / 3;
+
+      // Map palm X to canvas (mirrored because webcam is mirrored)
+      handX = (1 - palmX) * W;
+
+      // Draw hand dots on mini preview
+      hdCtx.fillStyle = 'rgba(255, 100, 100, 0.8)';
+      landmarks.forEach(lm => {
+        hdCtx.beginPath();
+        hdCtx.arc(lm.x * handDisplayCanvas.width, lm.y * handDisplayCanvas.height, 3, 0, Math.PI * 2);
+        hdCtx.fill();
+      });
+
+      // Draw connections
+      const connections = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+      hdCtx.strokeStyle = 'rgba(255,200,100,0.6)';
+      hdCtx.lineWidth = 1.5;
+      connections.forEach(([a, b]) => {
+        hdCtx.beginPath();
+        hdCtx.moveTo(landmarks[a].x * handDisplayCanvas.width, landmarks[a].y * handDisplayCanvas.height);
+        hdCtx.lineTo(landmarks[b].x * handDisplayCanvas.width, landmarks[b].y * handDisplayCanvas.height);
+        hdCtx.stroke();
+      });
+    }
+  });
+
+  const camera = new Camera(videoEl, {
+    onFrame: async () => {
+      await hands.send({ image: videoEl });
+    },
+    width: 640,
+    height: 480
+  });
+
+  camera.start().then(() => {
+    handTrackingReady = true;
+    callback && callback();
+  }).catch(err => {
+    console.warn('Camera start error:', err);
+    callback && callback();
+    startGame(false);
+  });
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+updateLives();
+gameLoop();
+</script>
+</body>
+</html>
