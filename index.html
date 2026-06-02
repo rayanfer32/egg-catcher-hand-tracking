@@ -388,6 +388,7 @@ let W = canvas.width, H = canvas.height;
 let state = 'menu'; // menu | playing | gameover
 let score = 0, bestScore = parseInt(localStorage.getItem('eggBest')||'0');
 let lives = 3, level = 1;
+const MAX_LIVES = 3;
 let combo = 0, comboTimer = 0;
 let useHandTracking = false;
 let handX = W / 2;
@@ -678,12 +679,6 @@ function drawEgg(egg) {
   ctx.translate(egg.x, egg.y);
   ctx.rotate(egg.rot || 0);
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.15)';
-  ctx.beginPath();
-  ctx.ellipse(2, egg.h * 0.45 + 3, egg.w * 0.4, 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
   // Egg body
   const grad = ctx.createRadialGradient(-egg.w * 0.2, -egg.h * 0.2, 1, 0, 0, egg.w * 0.8);
   grad.addColorStop(0, lightenColor(type.color, 30));
@@ -711,10 +706,7 @@ function drawEgg(egg) {
 
 function drawEggShape(ctx, x, y, w, h) {
   ctx.beginPath();
-  ctx.moveTo(x, y - h * 0.5);
-  ctx.bezierCurveTo(x + w * 0.5, y - h * 0.5, x + w * 0.5, y, x + w * 0.35, y + h * 0.35);
-  ctx.bezierCurveTo(x + w * 0.2, y + h * 0.5, x - w * 0.2, y + h * 0.5, x - w * 0.35, y + h * 0.35);
-  ctx.bezierCurveTo(x - w * 0.5, y, x - w * 0.5, y - h * 0.5, x, y - h * 0.5);
+  ctx.ellipse(x, y, w * 0.5, h * 0.5, 0, 0, Math.PI * 2);
   ctx.closePath();
 }
 
@@ -922,8 +914,8 @@ function spawnEgg(chickenIdx) {
   eggs.push({
     x: chicken.x,
     y: chicken.y + 10,
-    w: 14,
-    h: 18,
+    w: 22,
+    h: 28,
     vy: (cfg.eggSpeed + Math.random() * 0.5) * eggType.speed,
     type,
     rot: (Math.random() - 0.5) * 0.3,
@@ -1007,6 +999,21 @@ function update() {
       const pts = type.points * (combo >= 3 ? 2 : 1);
       score += pts;
       document.getElementById('scoreVal').textContent = score;
+
+      // If it's a bonus pink egg, reward a life!
+      if (type.bonus) {
+        if (lives < MAX_LIVES) {
+          lives++;
+          updateLives();
+          spawnFloatText(egg.x, egg.y - 45, '+1 Life 💖', '#ff6b9d');
+        } else {
+          const extraPts = 5;
+          score += extraPts;
+          document.getElementById('scoreVal').textContent = score;
+          spawnFloatText(egg.x, egg.y - 45, `+${extraPts} Full Lives! 💖`, '#ff6b9d');
+        }
+      }
+
       spawnCatchParticles(egg.x, egg.y, type.golden ? '#ffd700' : type.bonus ? '#ff6b9d' : '#a8e6cf');
       const label = combo >= 3 ? `+${pts} 🔥` : `+${pts}`;
       spawnFloatText(egg.x, egg.y - 20, label, type.golden ? '#ffd700' : '#ffffff');
@@ -1041,7 +1048,7 @@ function update() {
     if(lives <= 0) endGame();
   });
 
-  eggs = eggs.filter(e => e.caught || e.y - e.h / 2 <= H - 95);
+  eggs = eggs.filter(e => !e.caught && e.y - e.h / 2 <= H - 95);
   eggCracks = eggCracks.filter(c => { c.life--; return c.life > 0; });
 
   updateParticles();
@@ -1053,7 +1060,7 @@ function update() {
 function updateLives() {
   const container = document.getElementById('lives-display');
   container.innerHTML = '';
-  for(let i = 0; i < 3; i++) {
+  for(let i = 0; i < MAX_LIVES; i++) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', `life-egg ${i >= lives ? 'lost' : ''}`);
     svg.setAttribute('viewBox', '-14 -18 28 36');
