@@ -32,16 +32,16 @@ const firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 // Bind API callback to window so it is accessible globally by YouTube's script
-window.onYouTubeIframeAPIReady = function() {
+window.onYouTubeIframeAPIReady = function () {
   ytPlayer = new YT.Player('yt-player', {
-    videoId: '28rkMMVdtrg',
+    videoId: 'tlgmhEr-eK4',
     playerVars: {
       autoplay: 0,
       controls: 0,
       disablekb: 1,
       fs: 0,
       loop: 1,
-      playlist: '28rkMMVdtrg', // Loop video ID
+      playlist: 'tlgmhEr-eK4', // Loop video ID
       modestbranding: 1,
       rel: 0
     },
