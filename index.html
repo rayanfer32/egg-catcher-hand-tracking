@@ -23,14 +23,19 @@
 
   #game-wrapper {
     position: relative;
-    width: 900px;
-    height: 600px;
+    width: 70vw;
+    height: 90vh;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
 
   #gameCanvas {
-    border-radius: 16px;
+    border-radius: 20px;
     display: block;
-    cursor: none;
+    cursor: default;
+    width: 100%;
+    height: 100%;
   }
 
   #webcam-container {
@@ -90,7 +95,7 @@
   #ui-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    border-radius: 16px;
+    border-radius: 20px;
     pointer-events: none;
     z-index: 10;
   }
@@ -98,7 +103,7 @@
   #start-screen, #gameover-screen {
     position: absolute;
     inset: 0;
-    border-radius: 16px;
+    border-radius: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -377,7 +382,7 @@
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const W = canvas.width, H = canvas.height;
+let W = canvas.width, H = canvas.height;
 
 // ─── Game State ───────────────────────────────────────────────────────────────
 let state = 'menu'; // menu | playing | gameover
@@ -433,7 +438,7 @@ const basket = {
 };
 
 // ─── Clouds ───────────────────────────────────────────────────────────────────
-const clouds = Array.from({length: 6}, (_, i) => ({
+let clouds = Array.from({length: 6}, (_, i) => ({
   x: (i * 160 + 50) % W,
   y: 120 + Math.random() * 120,
   w: 80 + Math.random() * 60,
@@ -442,7 +447,7 @@ const clouds = Array.from({length: 6}, (_, i) => ({
 }));
 
 // ─── Grass details ────────────────────────────────────────────────────────────
-const grassBlades = Array.from({length: 60}, () => ({
+let grassBlades = Array.from({length: 60}, () => ({
   x: Math.random() * W,
   h: 8 + Math.random() * 14,
   lean: (Math.random() - 0.5) * 0.4
@@ -451,21 +456,26 @@ const grassBlades = Array.from({length: 60}, () => ({
 // ─── Drawing helpers ──────────────────────────────────────────────────────────
 function drawBackground() {
   // Sky
-  ctx.fillStyle = skyGrad;
+  const currentSkyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  currentSkyGrad.addColorStop(0, '#87CEEB');
+  currentSkyGrad.addColorStop(0.6, '#B0E0FF');
+  currentSkyGrad.addColorStop(1, '#7EC850');
+  
+  ctx.fillStyle = currentSkyGrad;
   ctx.fillRect(0, 0, W, H);
 
   // Mountains
   ctx.fillStyle = '#8facc8';
   ctx.beginPath();
   ctx.moveTo(0, H - 120);
-  ctx.lineTo(120, H - 280);
-  ctx.lineTo(240, H - 180);
-  ctx.lineTo(360, H - 320);
-  ctx.lineTo(480, H - 200);
-  ctx.lineTo(600, H - 350);
-  ctx.lineTo(720, H - 210);
-  ctx.lineTo(900, H - 290);
-  ctx.lineTo(900, H - 120);
+  ctx.lineTo(W * 0.133, H - 280);
+  ctx.lineTo(W * 0.267, H - 180);
+  ctx.lineTo(W * 0.400, H - 320);
+  ctx.lineTo(W * 0.533, H - 200);
+  ctx.lineTo(W * 0.667, H - 350);
+  ctx.lineTo(W * 0.800, H - 210);
+  ctx.lineTo(W, H - 290);
+  ctx.lineTo(W, H - 120);
   ctx.closePath();
   ctx.fill();
 
@@ -473,14 +483,14 @@ function drawBackground() {
   ctx.fillStyle = '#a8c4d8';
   ctx.beginPath();
   ctx.moveTo(0, H - 110);
-  ctx.lineTo(80, H - 220);
-  ctx.lineTo(200, H - 140);
-  ctx.lineTo(330, H - 260);
-  ctx.lineTo(460, H - 160);
-  ctx.lineTo(560, H - 230);
-  ctx.lineTo(700, H - 160);
-  ctx.lineTo(900, H - 200);
-  ctx.lineTo(900, H - 110);
+  ctx.lineTo(W * 0.089, H - 220);
+  ctx.lineTo(W * 0.222, H - 140);
+  ctx.lineTo(W * 0.367, H - 260);
+  ctx.lineTo(W * 0.511, H - 160);
+  ctx.lineTo(W * 0.622, H - 230);
+  ctx.lineTo(W * 0.778, H - 160);
+  ctx.lineTo(W, H - 200);
+  ctx.lineTo(W, H - 110);
   ctx.closePath();
   ctx.fill();
 
@@ -520,9 +530,9 @@ function drawBackground() {
   });
 
   // Trees
-  drawTree(80, H - 100, 50);
-  drawTree(820, H - 100, 60);
-  drawTree(160, H - 100, 35);
+  drawTree(W * 0.09, H - 100, 50);
+  drawTree(W - 80, H - 100, 60);
+  drawTree(W * 0.18, H - 100, 35);
 
   // Hen shelf
   ctx.fillStyle = '#6b3a1f';
@@ -936,7 +946,11 @@ function update() {
   // Basket movement
   const targetX = useHandTracking ? handX : mouseX;
   basket.targetX = Math.max(basket.width / 2, Math.min(W - basket.width / 2, targetX));
-  basket.x += (basket.targetX - basket.x) * 0.18;
+  if (useHandTracking) {
+    basket.x += (basket.targetX - basket.x) * 0.18;
+  } else {
+    basket.x = basket.targetX;
+  }
 
   // Spawn eggs in sequence
   if (layDelayTimer > 0) {
@@ -1240,7 +1254,12 @@ function setupMediaPipe(videoEl, callback) {
       const palmX = (landmarks[0].x + landmarks[5].x + landmarks[9].x) / 3;
 
       // Map palm X to canvas (mirrored because webcam is mirrored)
-      handX = (1 - palmX) * W;
+      const normalizedX = 1 - palmX;
+      // Map safe range [0.15, 0.85] to full screen width [0, 1]
+      const minRange = 0.15;
+      const maxRange = 0.85;
+      const mappedX = Math.max(0, Math.min(1, (normalizedX - minRange) / (maxRange - minRange)));
+      handX = mappedX * W;
 
       // Draw hand dots on mini preview
       hdCtx.fillStyle = 'rgba(255, 100, 100, 0.8)';
@@ -1280,6 +1299,42 @@ function setupMediaPipe(videoEl, callback) {
     startGame(false);
   });
 }
+
+function resizeCanvas() {
+  const container = document.getElementById('game-wrapper');
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  W = canvas.width;
+  H = canvas.height;
+
+  basket.y = H - 85;
+
+  // Reposition chickens relative to the new width
+  chickens.forEach((c, i) => {
+    c.x = (W / (NUM_CHICKENS + 1)) * (i + 1);
+  });
+
+  // Regenerate grass blades to span the new width
+  grassBlades = Array.from({length: Math.floor(W / 15)}, () => ({
+    x: Math.random() * W,
+    h: 8 + Math.random() * 14,
+    lean: (Math.random() - 0.5) * 0.4
+  }));
+
+  // Re-adjust cloud positions to fit the new screen width
+  clouds.forEach(c => {
+    if (c.x > W) {
+      c.x = Math.random() * W;
+    }
+  });
+
+  // Keep basket on screen
+  basket.x = Math.max(basket.width / 2, Math.min(W - basket.width / 2, basket.x));
+}
+
+window.addEventListener('resize', resizeCanvas);
+// Call resizeCanvas initially to set up correct size
+resizeCanvas();
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 updateLives();
