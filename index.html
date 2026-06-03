@@ -489,13 +489,13 @@
   #shop-bar {
     width: 100%;
     height: 90px;
-    background: rgba(15, 15, 25, 0.95);
-    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(180deg, #7d4a2a 0%, #543118 100%);
+    border-top: 4px solid #b45309;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15), 0 -4px 10px rgba(0, 0, 0, 0.3);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
-    z-index: 15;
     pointer-events: all;
   }
 
@@ -798,27 +798,27 @@
         <button class="btn-start" id="restartBtn">PLAY AGAIN!</button>
       </div>
     </div>
-    
-    <div id="shop-bar">
-      <div class="shop-title">🚜 UPGRADES</div>
-      <div class="shop-items">
-        <button class="shop-btn" id="upgrade-basket-btn" disabled>
-          <span class="btn-icon">🧺</span>
-          <div class="btn-text">
-            <span class="btn-label">Upgrade Basket</span>
-            <span class="btn-desc" id="basket-desc">Cap: 30 | Lvl 1</span>
-          </div>
-          <span class="btn-cost" id="basket-cost">$150</span>
-        </button>
-        <button class="shop-btn" id="sell-baskets-btn" disabled>
-          <span class="btn-icon">💰</span>
-          <div class="btn-text">
-            <span class="btn-label">Sell Stacked Baskets</span>
-            <span class="btn-desc" id="stacked-desc">0 baskets stacked</span>
-          </div>
-          <span class="btn-cost" id="stacked-value">+$0</span>
-        </button>
-      </div>
+  </div>
+
+  <div id="shop-bar">
+    <div class="shop-title">🚜 UPGRADES</div>
+    <div class="shop-items">
+      <button class="shop-btn" id="upgrade-basket-btn" disabled>
+        <span class="btn-icon">🧺</span>
+        <div class="btn-text">
+          <span class="btn-label">Upgrade Basket</span>
+          <span class="btn-desc" id="basket-desc">Cap: 30 | Lvl 1</span>
+        </div>
+        <span class="btn-cost" id="basket-cost">$150</span>
+      </button>
+      <button class="shop-btn" id="sell-baskets-btn" disabled>
+        <span class="btn-icon">💰</span>
+        <div class="btn-text">
+          <span class="btn-label">Sell Stacked Baskets</span>
+          <span class="btn-desc" id="stacked-desc">0 baskets stacked</span>
+        </div>
+        <span class="btn-cost" id="stacked-value">+$0</span>
+      </button>
     </div>
   </div>
 </div>
