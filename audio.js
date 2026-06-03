@@ -13,7 +13,58 @@ sounds.life.volume = 0.7;
 sounds.gameover.volume = 0.8;
 sounds.levelup.volume = 0.8;
 
+let audioCtx = null;
+
+function playHenSound() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    const now = audioCtx.currentTime;
+
+    // A hen cluck consists of 2 quick pitch sweeps (double cluck)
+    function triggerCluck(time, startFreq, duration) {
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'triangle';
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(900, time);
+      filter.Q.setValueAtTime(2.5, time);
+
+      osc.frequency.setValueAtTime(startFreq, time);
+      osc.frequency.exponentialRampToValueAtTime(startFreq * 0.45, time + duration);
+
+      gainNode.gain.setValueAtTime(0.01, time);
+      gainNode.gain.linearRampToValueAtTime(0.25, time + duration * 0.15);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+      osc.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      osc.start(time);
+      osc.stop(time + duration);
+    }
+
+    // Double cluck "cluck-cluck!"
+    triggerCluck(now, 680, 0.09);
+    triggerCluck(now + 0.08, 620, 0.12);
+  } catch (e) {
+    console.warn("Failed to synthesize hen sound:", e);
+  }
+}
+
 function playSound(name) {
+  if (name === 'hen') {
+    playHenSound();
+    return;
+  }
   const sound = sounds[name];
   if (sound) {
     sound.currentTime = 0;
