@@ -60,9 +60,88 @@ function playHenSound() {
   }
 }
 
+function playCoinSound() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    const now = audioCtx.currentTime;
+
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.setValueAtTime(880, now + 0.08); // A5
+
+    osc2.frequency.setValueAtTime(880, now); // A5
+    osc2.frequency.setValueAtTime(1174.66, now + 0.08); // D6
+
+    gainNode.gain.setValueAtTime(0.08, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    osc1.start(now);
+    osc1.stop(now + 0.35);
+    osc2.start(now);
+    osc2.stop(now + 0.35);
+  } catch (e) {
+    console.warn("Failed to synthesize coin sound:", e);
+  }
+}
+
+function playFeedSound() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    const now = audioCtx.currentTime;
+
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.12);
+
+    gainNode.gain.setValueAtTime(0.12, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.12);
+  } catch (e) {
+    console.warn("Failed to synthesize feed sound:", e);
+  }
+}
+
 function playSound(name) {
   if (name === 'hen') {
     playHenSound();
+    return;
+  }
+  if (name === 'coin') {
+    playCoinSound();
+    return;
+  }
+  if (name === 'feed') {
+    playFeedSound();
     return;
   }
   const sound = sounds[name];

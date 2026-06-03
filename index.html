@@ -29,13 +29,15 @@
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
   }
 
   #gameCanvas {
-    border-radius: 20px;
+    border-radius: 20px 20px 0 0;
     display: block;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 90px);
   }
 
   #webcam-container {
@@ -483,6 +485,240 @@
     from { transform: scale(1); }
     to { transform: scale(1.08); }
   }
+
+  #shop-bar {
+    width: 100%;
+    height: 90px;
+    background: rgba(15, 15, 25, 0.95);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 15;
+    pointer-events: all;
+  }
+
+  .shop-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: #fde68a;
+    text-shadow: 0 0 10px rgba(253, 230, 138, 0.3);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .shop-items {
+    display: flex;
+    gap: 16px;
+  }
+
+  .shop-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' style='font-size:28px'><text y='28'>🐥</text></svg>") 14 14, pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white;
+    outline: none;
+  }
+
+  .shop-btn:hover:not(:disabled) {
+    background: rgba(253, 230, 138, 0.1);
+    border-color: rgba(253, 230, 138, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .shop-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .shop-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-icon {
+    font-size: 24px;
+  }
+
+  .btn-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 13px;
+    color: #fff;
+  }
+
+  .btn-desc {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .btn-cost {
+    background: rgba(251, 191, 36, 0.2);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 12px;
+    color: #fbbf24;
+  }
+
+  .money-badge {
+    background: rgba(251, 191, 36, 0.15) !important;
+    border: 2px solid rgba(251, 191, 36, 0.5) !important;
+  }
+  
+  .money-badge .score-label {
+    color: #fbbf24 !important;
+  }
+
+  @media (max-width: 768px) {
+    #game-wrapper {
+      width: 95vw;
+      height: 85vh;
+      border-radius: 12px;
+    }
+    
+    #gameCanvas {
+      height: calc(100% - 75px);
+    }
+    
+    .screen-title {
+      font-size: 38px;
+    }
+    
+    .screen-subtitle {
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    
+    .btn-start {
+      font-size: 20px;
+      padding: 12px 36px;
+    }
+    
+    #score-display {
+      top: 10px;
+      left: 10px;
+      gap: 6px;
+    }
+    
+    .score-badge {
+      padding: 4px 10px;
+    }
+    
+    .score-label {
+      font-size: 10px;
+    }
+    
+    .score-value {
+      font-size: 16px;
+      min-width: unset;
+    }
+    
+    #level-display {
+      top: 10px;
+      font-size: 12px;
+    }
+    
+    #basket-container {
+      top: 32px;
+      width: 110px;
+      height: 12px;
+    }
+    
+    #basket-text {
+      font-size: 8px;
+    }
+    
+    #lives-display {
+      top: 10px;
+      right: 10px;
+      gap: 4px;
+    }
+    
+    .life-egg {
+      width: 16px;
+      height: 20px;
+    }
+    
+    #pause-btn {
+      top: 48px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+    
+    #music-btn {
+      top: 48px;
+      right: 48px;
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+    
+    #shop-bar {
+      height: 75px;
+      padding: 0 12px;
+    }
+    
+    .shop-title {
+      font-size: 12px;
+    }
+    
+    .shop-items {
+      gap: 8px;
+    }
+    
+    .shop-btn {
+      padding: 4px 8px;
+      gap: 6px;
+      border-radius: 8px;
+    }
+    
+    .btn-icon {
+      font-size: 16px;
+    }
+    
+    .btn-label {
+      font-size: 10px;
+    }
+    
+    .btn-desc {
+      font-size: 8px;
+    }
+    
+    .btn-cost {
+      font-size: 9px;
+      padding: 2px 4px;
+    }
+    
+    #level-up-banner {
+      padding: 12px 30px;
+      border-radius: 16px;
+    }
+    
+    #level-up-title {
+      font-size: 28px;
+    }
+    
+    #level-up-subtitle {
+      font-size: 14px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -499,6 +735,10 @@
       <div class="score-badge">
         <span class="score-label">EGGS</span>
         <span class="score-value" id="totalEggsVal">0</span>
+      </div>
+      <div class="score-badge money-badge">
+        <span class="score-label">MONEY</span>
+        <span class="score-value" id="moneyVal">$0</span>
       </div>
     </div>
 
@@ -558,6 +798,28 @@
         <button class="btn-start" id="restartBtn">PLAY AGAIN!</button>
       </div>
     </div>
+    
+    <div id="shop-bar">
+      <div class="shop-title">🚜 UPGRADES</div>
+      <div class="shop-items">
+        <button class="shop-btn" id="upgrade-basket-btn" disabled>
+          <span class="btn-icon">🧺</span>
+          <div class="btn-text">
+            <span class="btn-label">Upgrade Basket</span>
+            <span class="btn-desc" id="basket-desc">Cap: 30 | Lvl 1</span>
+          </div>
+          <span class="btn-cost" id="basket-cost">$150</span>
+        </button>
+        <button class="shop-btn" id="sell-baskets-btn" disabled>
+          <span class="btn-icon">💰</span>
+          <div class="btn-text">
+            <span class="btn-label">Sell Stacked Baskets</span>
+            <span class="btn-desc" id="stacked-desc">0 baskets stacked</span>
+          </div>
+          <span class="btn-cost" id="stacked-value">+$0</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -595,12 +857,22 @@ let shakeTimer = 0;
 
 let totalEggsCaught = 0;
 let eggsCaughtThisLevel = 0;
-const BASKET_CAPACITY = 30;
+let money = 0;
+let currentBasketValue = 0;
+let stackedBaskets = [];
+let basketCapacity = 30;
+let basketLevel = 1;
+
+const BASKET_UPGRADES = [
+  { level: 1, capacity: 30, cost: 150, name: "Woven Basket", color: "#c47c3a", rimColor: "#a3611e" },
+  { level: 2, capacity: 45, cost: 300, name: "Sturdy Wood Basket", color: "#a05a2c", rimColor: "#7b3d11" },
+  { level: 3, capacity: 60, cost: 500, name: "Reinforced Iron Basket", color: "#718096", rimColor: "#4a5568" },
+  { level: 4, capacity: 80, cost: 800, name: "Golden Royalty Basket", color: "#ecc94b", rimColor: "#b7791f" },
+  { level: 5, capacity: 100, cost: null, name: "Infinite Deluxe Basket", color: "#ed64a6", rimColor: "#b83280" }
+];
 
 let butterflies = [];
 let flowers = [];
-
-
 
 // Chicken sequencer state
 let currentChickenIdx = 0;
@@ -616,11 +888,15 @@ skyGrad.addColorStop(1, '#7EC850');
 
 // ─── Chickens ─────────────────────────────────────────────────────────────────
 const NUM_CHICKENS = 5;
+const CHICKEN_NAMES = ['Clucky', 'Eggbert', 'Yolko', 'Feather', 'Peep'];
 const chickens = Array.from({length: NUM_CHICKENS}, (_, i) => ({
   x: 80 + i * 165,
   y: 130,
   bobOffset: Math.random() * Math.PI * 2,
-  active: true
+  active: true,
+  level: 1,
+  name: CHICKEN_NAMES[i],
+  feedCost: 10
 }));
 
 // ─── Eggs ─────────────────────────────────────────────────────────────────────
@@ -865,13 +1141,15 @@ function drawTree(x, groundY, size) {
 
 function drawChicken(c, t, isActive, eggsLeft) {
   let bob = Math.sin(t * 0.05 + c.bobOffset) * 2;
-  let scale = 1;
+  // Base growth scale from hen level
+  const growthScale = Math.min(1.8, 1.0 + (c.level - 1) * 0.15);
+  let scale = growthScale;
   let angle = 0;
 
   if (isActive && eggsLeft > 0 && state === 'playing') {
     // Excited/vibrating laying animation
     bob += Math.sin(t * 0.4) * 1.5;
-    scale = 1.06 + Math.sin(t * 0.25) * 0.04;
+    scale = (1.06 + Math.sin(t * 0.25) * 0.04) * growthScale;
     angle = Math.sin(t * 0.3) * 0.03;
   }
 
@@ -962,6 +1240,39 @@ function drawChicken(c, t, isActive, eggsLeft) {
   }
 
   ctx.restore();
+
+  // Draw name and level above chicken in screen coordinates
+  if (state === 'playing') {
+    ctx.save();
+    
+    const badgeOffset = 38 + growthScale * 12;
+    const badgeY = cy - badgeOffset;
+    
+    // 1. Level text
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(cx - 42, badgeY - 8, 84, 16, 8);
+    ctx.fill();
+    
+    ctx.fillStyle = '#fde68a';
+    ctx.font = "bold 9px 'Fredoka One', cursive";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Lvl ${c.level} ${c.name}`, cx, badgeY);
+    
+    // 2. Feed bubble
+    const isAffordable = money >= c.feedCost;
+    ctx.fillStyle = isAffordable ? 'rgba(74, 222, 128, 0.95)' : 'rgba(255, 255, 255, 0.25)';
+    ctx.beginPath();
+    ctx.roundRect(cx - 30, badgeY + 11, 60, 13, 5);
+    ctx.fill();
+    
+    ctx.fillStyle = isAffordable ? '#052e16' : 'rgba(255, 255, 255, 0.5)';
+    ctx.font = "bold 8px 'Fredoka One', cursive";
+    ctx.fillText(`🌾 $${c.feedCost}`, cx, badgeY + 18);
+    
+    ctx.restore();
+  }
 }
 
 function drawEgg(egg) {
@@ -1005,6 +1316,9 @@ function drawBasket() {
   const bx = basket.x, by = basket.y;
   const bw = basket.width, bh = basket.height;
 
+  // Get current upgrade colors
+  const upgrade = BASKET_UPGRADES[basketLevel - 1] || BASKET_UPGRADES[0];
+
   // Basket shadow
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.beginPath();
@@ -1019,7 +1333,7 @@ function drawBasket() {
   ctx.stroke();
 
   // Basket body (trapezoid)
-  ctx.fillStyle = '#c47c3a';
+  ctx.fillStyle = upgrade.color;
   ctx.beginPath();
   ctx.moveTo(bx - bw * 0.5, by - bh * 0.2);
   ctx.lineTo(bx - bw * 0.4, by + bh * 0.45);
@@ -1029,7 +1343,7 @@ function drawBasket() {
   ctx.fill();
 
   // Weave lines horizontal
-  ctx.strokeStyle = '#a3611e';
+  ctx.strokeStyle = upgrade.rimColor;
   ctx.lineWidth = 1.5;
   for(let row = 0; row < 4; row++) {
     const t = row / 3;
@@ -1051,7 +1365,7 @@ function drawBasket() {
   }
 
   // Rim
-  ctx.fillStyle = '#a3611e';
+  ctx.fillStyle = upgrade.rimColor;
   ctx.fillRect(bx - bw * 0.52, by - bh * 0.2 - 4, bw * 1.04, 8);
   ctx.beginPath();
   ctx.roundRect(bx - bw * 0.52, by - bh * 0.2 - 4, bw * 1.04, 8, 4);
@@ -1150,6 +1464,20 @@ function drawParticles() {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
+    } else if(p.type === 'heart') {
+      ctx.beginPath();
+      const hs = p.size;
+      ctx.moveTo(p.x, p.y + hs * 0.3);
+      ctx.bezierCurveTo(p.x - hs * 0.7, p.y - hs * 0.7, p.x - hs * 1.2, p.y + hs * 0.2, p.x, p.y + hs * 1.1);
+      ctx.bezierCurveTo(p.x + hs * 1.2, p.y + hs * 0.2, p.x + hs * 0.7, p.y - hs * 0.7, p.x, p.y + hs * 0.3);
+      ctx.fill();
+    } else if(p.type === 'coin') {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
     } else {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -1198,9 +1526,18 @@ function spawnEgg(chickenIdx) {
   const chicken = chickens[chickenIdx];
   const cfg = getLevelConfig();
   let type = 0;
+  
+  // Base chances modified by chicken level
+  let goldenChance = cfg.goldenChance;
+  let bonusChance = 0.15;
+  
+  goldenChance += (chicken.level - 1) * 0.04;
+  bonusChance += (chicken.level - 1) * 0.03;
+  
   const r = Math.random();
-  if(r < cfg.goldenChance) type = 1;
-  else if(r < cfg.goldenChance + 0.15) type = 2;
+  if(r < goldenChance) type = 1;
+  else if(r < goldenChance + bonusChance) type = 2;
+  
   const eggType = EGG_TYPES[type];
   eggs.push({
     x: chicken.x,
@@ -1256,8 +1593,9 @@ function update() {
       eggsToLay--;
       
       if (eggsToLay > 0) {
-        // If there's another egg to lay, set a brief delay
-        layDelayTimer = Math.max(25, 45 - (level - 1) * 2);
+        // If there's another egg to lay, set a brief delay (reduced for higher level chickens)
+        const speedBonus = (chickens[currentChickenIdx].level - 1) * 3;
+        layDelayTimer = Math.max(12, 45 - (level - 1) * 2 - speedBonus);
       } else {
         // Chicken is done laying its eggs. Move to a random different chicken.
         const prevChickenIdx = currentChickenIdx;
@@ -1282,8 +1620,10 @@ function update() {
         // Add a travel bonus delay based on distance to give the player fair time to move the basket
         const travelBonus = distance * 8;
         
-        // Set the delay before the next chicken starts laying
-        layDelayTimer = cfg.spawnRate + travelBonus + Math.random() * 15;
+        // Set the delay before the next chicken starts laying (reduced for higher level chickens)
+        const nextChicken = chickens[currentChickenIdx];
+        const nextSpeedBonus = (nextChicken.level - 1) * 4;
+        layDelayTimer = Math.max(15, cfg.spawnRate + travelBonus + Math.random() * 15 - nextSpeedBonus);
       }
     } else {
       // Fallback
@@ -1321,9 +1661,15 @@ function update() {
       eggsCaughtThisLevel++;
       document.getElementById('totalEggsVal').textContent = totalEggsCaught;
       
-      let eggsLeft = BASKET_CAPACITY - eggsCaughtThisLevel;
-      document.getElementById('basket-bar').style.width = ((eggsCaughtThisLevel / BASKET_CAPACITY) * 100) + '%';
-      document.getElementById('basket-text').textContent = eggsLeft + ' left';
+      // Calculate cash value of this egg
+      let eggVal = 1; // standard
+      if (type.golden) eggVal = 5;
+      else if (type.bonus) eggVal = 3;
+      
+      currentBasketValue += eggVal;
+      
+      document.getElementById('basket-bar').style.width = ((eggsCaughtThisLevel / basketCapacity) * 100) + '%';
+      document.getElementById('basket-text').textContent = eggsCaughtThisLevel + ' / ' + basketCapacity + ' eggs ($' + currentBasketValue + ')';
 
       // If it's a bonus pink egg, reward a life!
       if (type.bonus) {
@@ -1346,15 +1692,25 @@ function update() {
       spawnCatchParticles(egg.x, egg.y, type.golden ? '#ffd700' : type.bonus ? '#ff6b9d' : '#a8e6cf');
       const label = combo >= 3 ? `+${pts} 🔥` : `+${pts}`;
       spawnFloatText(egg.x, egg.y - 20, label, type.golden ? '#ffd700' : '#ffffff');
+      
+      updateShopUI();
 
-      if(eggsCaughtThisLevel >= BASKET_CAPACITY) {
-        level++;
+      if(eggsCaughtThisLevel >= basketCapacity) {
+        // Complete the basket!
+        stackedBaskets.push({
+          capacity: basketCapacity,
+          value: currentBasketValue
+        });
+        
         eggsCaughtThisLevel = 0;
+        currentBasketValue = 0;
+
+        level++;
         document.getElementById('levelVal').textContent = level;
         
         // Reset progress bar
         document.getElementById('basket-bar').style.width = '0%';
-        document.getElementById('basket-text').textContent = BASKET_CAPACITY + ' left';
+        document.getElementById('basket-text').textContent = '0 / ' + basketCapacity + ' eggs ($0)';
         
         // Prominent Level Up UI screen banner!
         const lvlScreen = document.getElementById('level-up-screen');
@@ -1369,6 +1725,8 @@ function update() {
         }, 2000);
 
         spawnFloatText(W/2, H/2 - 60, `LEVEL ${level}!`, '#fbbf24');
+        
+        updateShopUI();
       }
     }
   });
@@ -1407,6 +1765,201 @@ function update() {
   updateFloatTexts();
 
   if(shakeTimer > 0) shakeTimer--;
+}
+
+// ─── Shop & upgrades ──────────────────────────────────────────────────────────
+function drawStackedBaskets() {
+  const startX = W - 100;
+  const startY = H - 100;
+  
+  stackedBaskets.forEach((basketData, i) => {
+    // Stack upwards: each basket is offset by 18px vertically
+    const bx = startX;
+    const by = startY - i * 18;
+    const bw = 50; // slightly smaller basket representation
+    const bh = 30;
+    
+    ctx.save();
+    ctx.shadowColor = 'rgba(251, 191, 36, 0.4)';
+    ctx.shadowBlur = 4;
+    
+    // Handle
+    ctx.strokeStyle = '#8B5E3C';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(bx, by - bh * 0.1, bw * 0.35, Math.PI, 0);
+    ctx.stroke();
+
+    // Body
+    ctx.fillStyle = '#c47c3a';
+    ctx.beginPath();
+    ctx.moveTo(bx - bw * 0.5, by - bh * 0.2);
+    ctx.lineTo(bx - bw * 0.4, by + bh * 0.45);
+    ctx.lineTo(bx + bw * 0.4, by + bh * 0.45);
+    ctx.lineTo(bx + bw * 0.5, by - bh * 0.2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Rim
+    ctx.fillStyle = '#a3611e';
+    ctx.beginPath();
+    ctx.roundRect(bx - bw * 0.52, by - bh * 0.2 - 2, bw * 1.04, 4, 2);
+    ctx.fill();
+
+    // Draw eggs sticking out
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.arc(bx - 8, by - bh * 0.2, 4, 0, Math.PI*2);
+    ctx.arc(bx, by - bh * 0.2 - 2, 4, 0, Math.PI*2);
+    ctx.arc(bx + 8, by - bh * 0.2, 4, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  });
+  
+  if (stackedBaskets.length > 0) {
+    ctx.save();
+    ctx.fillStyle = '#ffd700';
+    ctx.font = "bold 11px 'Fredoka One', cursive";
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'black';
+    ctx.shadowBlur = 4;
+    ctx.fillText(`${stackedBaskets.length} Full Basket${stackedBaskets.length > 1 ? 's' : ''}`, startX, startY - stackedBaskets.length * 18 - 15);
+    ctx.restore();
+  }
+}
+
+function feedChicken(idx) {
+  const c = chickens[idx];
+  if (money >= c.feedCost) {
+    money -= c.feedCost;
+    c.level++;
+    
+    // Scale feed cost
+    c.feedCost = Math.floor(10 * Math.pow(1.6, c.level - 1));
+    
+    // Animate feeding
+    spawnFloatText(c.x, c.y - 40, `Level Up! Lvl ${c.level} 🐔`, '#4ade80');
+    playSound('feed');
+    spawnHeartParticles(c.x, c.y);
+    
+    // Update UI
+    document.getElementById('moneyVal').textContent = '$' + money;
+    updateShopUI();
+  } else {
+    spawnFloatText(c.x, c.y - 45, `Need $${c.feedCost}! 💰`, '#f87171');
+  }
+}
+
+function spawnHeartParticles(x, y) {
+  for(let i = 0; i < 8; i++) {
+    const angle = (Math.PI * 2 / 8) * i + (Math.random() - 0.5) * 0.5;
+    const speed = 1.5 + Math.random() * 2;
+    particles.push({
+      x, y: y - 20,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1.5,
+      color: '#ff6b9d',
+      life: 1,
+      size: 4 + Math.random() * 4,
+      type: 'heart'
+    });
+  }
+}
+
+function sellStackedBaskets() {
+  if (stackedBaskets.length === 0) return;
+  
+  let totalCash = 0;
+  stackedBaskets.forEach(b => {
+    totalCash += b.value;
+  });
+  
+  money += totalCash;
+  stackedBaskets = [];
+  
+  playSound('coin');
+  document.getElementById('moneyVal').textContent = '$' + money;
+  
+  spawnFloatText(W - 100, H - 150, `+$${totalCash}! 💰`, '#4ade80');
+  
+  // Coin particles
+  for (let i = 0; i < 15; i++) {
+    particles.push({
+      x: W - 100 + (Math.random() - 0.5) * 40,
+      y: H - 120 + (Math.random() - 0.5) * 40,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -2 - Math.random() * 4,
+      color: '#ffd700',
+      life: 1,
+      size: 4 + Math.random() * 3,
+      type: 'coin'
+    });
+  }
+  
+  updateShopUI();
+}
+
+function upgradeBasket() {
+  if (basketLevel >= 5) return;
+  const upgrade = BASKET_UPGRADES[basketLevel]; // index basketLevel is the next level (starts at 1)
+  if (money >= upgrade.cost) {
+    money -= upgrade.cost;
+    basketLevel++;
+    basketCapacity = upgrade.capacity;
+    
+    // Apply upgraded properties to active basket
+    basket.width = 90 + (basketLevel - 1) * 8;
+    
+    playSound('levelup');
+    document.getElementById('moneyVal').textContent = '$' + money;
+    spawnFloatText(basket.x, basket.y - 40, `Upgraded Basket! 🧺`, '#fbbf24');
+    
+    // Sparkles
+    spawnCatchParticles(basket.x, basket.y, '#fbbf24');
+    
+    // Update texts & values
+    document.getElementById('basket-bar').style.width = ((eggsCaughtThisLevel / basketCapacity) * 100) + '%';
+    document.getElementById('basket-text').textContent = eggsCaughtThisLevel + ' / ' + basketCapacity + ' eggs ($' + currentBasketValue + ')';
+    
+    updateShopUI();
+  } else {
+    spawnFloatText(basket.x, basket.y - 40, `Need $${upgrade.cost}! 💰`, '#f87171');
+  }
+}
+
+function updateShopUI() {
+  const basketCostEl = document.getElementById('basket-cost');
+  const basketDescEl = document.getElementById('basket-desc');
+  const basketBtn = document.getElementById('upgrade-basket-btn');
+  
+  if (basketLevel >= 5) {
+    basketCostEl.textContent = 'MAX';
+    basketDescEl.textContent = `Cap: ${basketCapacity} | Level 5 (Max)`;
+    basketBtn.disabled = true;
+  } else {
+    const nextCfg = BASKET_UPGRADES[basketLevel];
+    basketCostEl.textContent = `$${nextCfg.cost}`;
+    basketDescEl.textContent = `Cap: ${nextCfg.capacity} | Lvl ${basketLevel} ➔ ${nextCfg.level}`;
+    basketBtn.disabled = money < nextCfg.cost;
+  }
+  
+  const sellBtn = document.getElementById('sell-baskets-btn');
+  const sellDesc = document.getElementById('stacked-desc');
+  const sellValue = document.getElementById('stacked-value');
+  
+  if (stackedBaskets.length > 0) {
+    let totalVal = 0;
+    stackedBaskets.forEach(b => totalVal += b.value);
+    
+    sellBtn.disabled = false;
+    sellDesc.textContent = `${stackedBaskets.length} basket${stackedBaskets.length > 1 ? 's' : ''} stacked`;
+    sellValue.textContent = `+$${totalVal}`;
+  } else {
+    sellBtn.disabled = true;
+    sellDesc.textContent = '0 baskets stacked';
+    sellValue.textContent = '+$0';
+  }
 }
 
 function updateLives() {
@@ -1456,6 +2009,9 @@ function render() {
 
   // Basket
   drawBasket();
+  
+  // Stacked baskets on the side
+  drawStackedBaskets();
 
   // Particles & float texts
   drawParticles();
@@ -1493,19 +2049,37 @@ function startGame(withHand) {
   comboTimer = 0;
   totalEggsCaught = 0;
   eggsCaughtThisLevel = 0;
+  money = 0;
+  currentBasketValue = 0;
+  stackedBaskets = [];
+  basketCapacity = 30;
+  basketLevel = 1;
+  basket.width = 90;
+  
+  // Reset chicken upgrades
+  chickens.forEach(c => {
+    c.level = 1;
+    c.feedCost = 10;
+  });
+
   eggs = [];
   particles = [];
   floatingTexts = [];
   eggCracks = [];
   frameCount = 0;
   basket.x = W / 2;
+  
   document.getElementById('scoreVal').textContent = '0';
   document.getElementById('totalEggsVal').textContent = '0';
+  document.getElementById('moneyVal').textContent = '$0';
   document.getElementById('levelVal').textContent = '1';
   document.getElementById('basket-bar').style.width = '0%';
-  document.getElementById('basket-text').textContent = BASKET_CAPACITY + ' left';
+  document.getElementById('basket-text').textContent = '0 / 30 eggs ($0)';
   document.getElementById('level-up-screen').classList.remove('active');
+  
   updateLives();
+  updateShopUI();
+
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('gameover-screen').style.display = 'none';
   document.getElementById('pause-screen').style.display = 'none';
@@ -1551,6 +2125,41 @@ canvas.addEventListener('touchmove', e => {
     mouseX = (e.touches[0].clientX - rect.left) * (W / rect.width);
   }
 }, { passive: false });
+
+// Feed chickens on click, or sell stacked baskets on click
+canvas.addEventListener('click', e => {
+  if (state !== 'playing') return;
+  const rect = canvas.getBoundingClientRect();
+  const clickX = (e.clientX - rect.left) * (W / rect.width);
+  const clickY = (e.clientY - rect.top) * (H / rect.height);
+  
+  // 1. Check if clicked near a chicken
+  for (let i = 0; i < chickens.length; i++) {
+    const c = chickens[i];
+    const dx = clickX - c.x;
+    const dy = clickY - c.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 40) {
+      feedChicken(i);
+      return;
+    }
+  }
+  
+  // 2. Check if clicked stacked baskets stack on the right side
+  const startX = W - 100;
+  if (stackedBaskets.length > 0 && Math.abs(clickX - startX) < 40 && clickY > H - 150 && clickY < H - 50) {
+    sellStackedBaskets();
+    return;
+  }
+});
+
+document.getElementById('upgrade-basket-btn').addEventListener('click', () => {
+  upgradeBasket();
+});
+
+document.getElementById('sell-baskets-btn').addEventListener('click', () => {
+  sellStackedBaskets();
+});
 
 document.getElementById('startBtn').addEventListener('click', () => {
   initHandTracking(() => startGame(true));
@@ -1708,9 +2317,8 @@ function setupMediaPipe(videoEl, callback) {
 }
 
 function resizeCanvas() {
-  const container = document.getElementById('game-wrapper');
-  canvas.width = container.clientWidth;
-  canvas.height = container.clientHeight;
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
   W = canvas.width;
   H = canvas.height;
 
