@@ -280,6 +280,8 @@ window.sendMultiplayerSync = function() {
         stackedBasketsCount: stackedBaskets.length,
         activeChickenIdx: currentChickenIdx,
         eggsToLay: eggsToLay,
+        activeChickenIdx2: currentChickenIdx2,
+        eggsToLay2: eggsToLay2,
         hostBasketX: basket.x,
         hostBasketLevel: basketLevel
       }

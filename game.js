@@ -41,6 +41,11 @@ let currentChickenIdx = 0;
 let eggsToLay = 0;
 let layDelayTimer = 0;
 
+// Chicken sequencer state (Sequencer 2 - Multiplayer only!)
+let currentChickenIdx2 = 0;
+let eggsToLay2 = 0;
+let layDelayTimer2 = 0;
+
 // ─── Assets (drawn procedurally) ─────────────────────────────────────────────
 // Sky gradient
 const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
@@ -719,9 +724,11 @@ function drawFloatTexts() {
 
 // ─── Game Logic ───────────────────────────────────────────────────────────────
 function getLevelConfig() {
+  let speedMultiplier = window.isMultiplayer ? 1.25 : 1.0;
+  let spawnRateReduction = window.isMultiplayer ? 0.7 : 1.0; // 30% faster spawns (lower spawnRate delay)
   return {
-    eggSpeed: 1.5 + (level - 1) * 0.45,
-    spawnRate: Math.max(25, 90 - (level - 1) * 9),
+    eggSpeed: (1.5 + (level - 1) * 0.45) * speedMultiplier,
+    spawnRate: Math.max(20, Math.floor((90 - (level - 1) * 9) * spawnRateReduction)),
     goldenChance: Math.min(0.35, 0.1 + (level - 1) * 0.03)
   };
 }
@@ -849,6 +856,55 @@ function update() {
       if (level >= 8) minEggs = 2;
       eggsToLay = Math.floor(Math.random() * (maxEggs - minEggs + 1)) + minEggs;
       layDelayTimer = cfg.spawnRate;
+    }
+  }
+
+  // 👥 Spawn eggs in sequence (Sequencer 2 - Multiplayer Host only!)
+  if (window.isMultiplayer && window.isHost) {
+    if (layDelayTimer2 > 0) {
+      layDelayTimer2--;
+    } else {
+      if (eggsToLay2 > 0) {
+        spawnEgg(currentChickenIdx2);
+        if (typeof playSound === 'function') playSound('hen');
+        eggsToLay2--;
+        
+        if (eggsToLay2 > 0) {
+          const speedBonus2 = (chickens[currentChickenIdx2].level - 1) * 3;
+          layDelayTimer2 = Math.max(12, 45 - (level - 1) * 2 - speedBonus2);
+        } else {
+          const prevChickenIdx2 = currentChickenIdx2;
+          let nextIdx2 = currentChickenIdx2;
+          // Ensure Sequencer 2 picks a chicken different from Sequencer 1 and its own previous chicken
+          while (nextIdx2 === currentChickenIdx2 || nextIdx2 === currentChickenIdx) {
+            nextIdx2 = Math.floor(Math.random() * NUM_CHICKENS);
+          }
+          currentChickenIdx2 = nextIdx2;
+          
+          let maxEggs = 2;
+          if (level >= 8) maxEggs = 4;
+          else if (level >= 4) maxEggs = 3;
+          let minEggs = 1;
+          if (level >= 8) minEggs = 2;
+          
+          eggsToLay2 = Math.floor(Math.random() * (maxEggs - minEggs + 1)) + minEggs;
+          
+          const distance2 = Math.abs(currentChickenIdx2 - prevChickenIdx2);
+          const travelBonus2 = distance2 * 8;
+          
+          const nextChicken2 = chickens[currentChickenIdx2];
+          const nextSpeedBonus2 = (nextChicken2.level - 1) * 4;
+          layDelayTimer2 = Math.max(15, cfg.spawnRate + travelBonus2 + Math.random() * 15 - nextSpeedBonus2);
+        }
+      } else {
+        let maxEggs = 2;
+        if (level >= 8) maxEggs = 4;
+        else if (level >= 4) maxEggs = 3;
+        let minEggs = 1;
+        if (level >= 8) minEggs = 2;
+        eggsToLay2 = Math.floor(Math.random() * (maxEggs - minEggs + 1)) + minEggs;
+        layDelayTimer2 = cfg.spawnRate;
+      }
     }
   }
 
@@ -1266,7 +1322,22 @@ function render() {
   });
 
   // Chickens
-  chickens.forEach((c, i) => drawChicken(c, frameCount, i === currentChickenIdx, eggsToLay));
+  chickens.forEach((c, i) => {
+    let isActive = false;
+    let eggsLeft = 0;
+    if (i === currentChickenIdx && eggsToLay > 0) {
+      isActive = true;
+      eggsLeft = eggsToLay;
+    } else if (window.isMultiplayer) {
+      const idx2 = window.isHost ? currentChickenIdx2 : window.currentChickenIdx2;
+      const left2 = window.isHost ? eggsToLay2 : window.eggsToLay2;
+      if (i === idx2 && left2 > 0) {
+        isActive = true;
+        eggsLeft = left2;
+      }
+    }
+    drawChicken(c, frameCount, isActive, eggsLeft);
+  });
 
   // Eggs
   eggs.forEach(e => drawEgg(e));
@@ -1361,6 +1432,18 @@ function startGame(withHand) {
   currentChickenIdx = Math.floor(Math.random() * NUM_CHICKENS);
   eggsToLay = Math.random() < 0.5 ? 1 : 2;
   layDelayTimer = 40; // Short initial delay
+
+  // 👥 Initialize secondary sequencer in multiplayer co-op
+  if (window.isMultiplayer && window.isHost) {
+    let nextIdx = currentChickenIdx;
+    while (nextIdx === currentChickenIdx) {
+      nextIdx = Math.floor(Math.random() * NUM_CHICKENS);
+    }
+    currentChickenIdx2 = nextIdx;
+    eggsToLay2 = Math.random() < 0.5 ? 1 : 2;
+    layDelayTimer2 = 70; // Staggered delay
+  }
+
   state = 'playing';
 
   // Autoplay music upon game start (using user click interaction)
@@ -1627,6 +1710,8 @@ window.setMultiplayerState = function(data) {
   // Active chicken indicator
   currentChickenIdx = data.activeChickenIdx;
   eggsToLay = data.eggsToLay;
+  window.currentChickenIdx2 = data.activeChickenIdx2;
+  window.eggsToLay2 = data.eggsToLay2;
   
   // Sync the DOM text components
   document.getElementById('scoreVal').textContent = score;
