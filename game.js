@@ -474,12 +474,25 @@ function drawEggShape(ctx, x, y, w, h) {
   ctx.closePath();
 }
 
-function drawBasket() {
-  const bx = basket.x, by = basket.y;
-  const bw = basket.width, bh = basket.height;
-
+function drawSingleBasket(bx, by, bw, bh, lvl, isRemote) {
   // Get current upgrade colors
-  const upgrade = BASKET_UPGRADES[basketLevel - 1] || BASKET_UPGRADES[0];
+  let upgrade = BASKET_UPGRADES[lvl - 1] || BASKET_UPGRADES[0];
+  
+  // Custom colors for remote basket to tell them apart
+  let basketColor = upgrade.color;
+  let rimColor = upgrade.rimColor;
+  
+  if (isRemote) {
+    // Tint remote basket slightly purple/blue
+    basketColor = '#4f46e5'; // Indigo
+    rimColor = '#312e81'; // Dark Indigo
+    
+    // Customize based on level
+    if (lvl === 2) { basketColor = '#3b82f6'; rimColor = '#1d4ed8'; } // Blue
+    else if (lvl === 3) { basketColor = '#06b6d4'; rimColor = '#0891b2'; } // Cyan
+    else if (lvl === 4) { basketColor = '#10b981'; rimColor = '#047857'; } // Green
+    else if (lvl === 5) { basketColor = '#ec4899'; rimColor = '#be185d'; } // Pink
+  }
 
   // Basket shadow
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
@@ -488,14 +501,14 @@ function drawBasket() {
   ctx.fill();
 
   // Handle
-  ctx.strokeStyle = '#8B5E3C';
+  ctx.strokeStyle = isRemote ? '#475569' : '#8B5E3C';
   ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.arc(bx, by - bh * 0.1, bw * 0.35, Math.PI, 0);
   ctx.stroke();
 
   // Basket body (trapezoid)
-  ctx.fillStyle = upgrade.color;
+  ctx.fillStyle = basketColor;
   ctx.beginPath();
   ctx.moveTo(bx - bw * 0.5, by - bh * 0.2);
   ctx.lineTo(bx - bw * 0.4, by + bh * 0.45);
@@ -505,7 +518,7 @@ function drawBasket() {
   ctx.fill();
 
   // Weave lines horizontal
-  ctx.strokeStyle = upgrade.rimColor;
+  ctx.strokeStyle = rimColor;
   ctx.lineWidth = 1.5;
   for(let row = 0; row < 4; row++) {
     const t = row / 3;
@@ -527,11 +540,40 @@ function drawBasket() {
   }
 
   // Rim
-  ctx.fillStyle = upgrade.rimColor;
+  ctx.fillStyle = rimColor;
   ctx.fillRect(bx - bw * 0.52, by - bh * 0.2 - 4, bw * 1.04, 8);
   ctx.beginPath();
   ctx.roundRect(bx - bw * 0.52, by - bh * 0.2 - 4, bw * 1.04, 8, 4);
   ctx.fill();
+  
+  // Tag player ID/label above remote basket
+  if (isRemote) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = "bold 10px 'Fredoka One', cursive";
+    ctx.textAlign = 'center';
+    ctx.fillText("P2", bx, by - bh * 0.5);
+    ctx.restore();
+  } else if (window.isMultiplayer) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = "bold 10px 'Fredoka One', cursive";
+    ctx.textAlign = 'center';
+    ctx.fillText("P1 (You)", bx, by - bh * 0.5);
+    ctx.restore();
+  }
+}
+
+function drawBasket() {
+  // Draw local player's basket
+  drawSingleBasket(basket.x, basket.y, basket.width, basket.height, basketLevel, false);
+  
+  // Draw remote player's basket in multiplayer
+  if (window.isMultiplayer && typeof window.remoteBasketX !== 'undefined') {
+    const rLevel = window.remoteBasketLevel || 1;
+    const rWidth = 90 + (rLevel - 1) * 8;
+    drawSingleBasket(window.remoteBasketX, basket.y, rWidth, basket.height, rLevel, true);
+  }
 }
 
 function drawCrack(x, y) {
@@ -735,13 +777,24 @@ function update() {
     }
   });
 
-  // Basket movement
+  // Basket movement (local)
   const targetX = useHandTracking ? handX : mouseX;
   basket.targetX = Math.max(basket.width / 2, Math.min(W - basket.width / 2, targetX));
   if (useHandTracking) {
     basket.x += (basket.targetX - basket.x) * 0.18;
   } else {
     basket.x = basket.targetX;
+  }
+
+  // 👥 If multiplayer Guest, send basket movement and skip physics/collisions
+  if (window.isMultiplayer && !window.isHost) {
+    if (typeof window.sendMultiplayerMove === 'function') {
+      window.sendMultiplayerMove(basket.x, basketLevel);
+    }
+    updateParticles();
+    updateFloatTexts();
+    if(shakeTimer > 0) shakeTimer--;
+    return;
   }
 
   // Spawn eggs in sequence
@@ -804,13 +857,27 @@ function update() {
     egg.y += egg.vy;
     egg.rot += egg.rotV;
 
-    // Catch check
+    // 👥 Catch check (Local Player)
     const bLeft = basket.x - basket.width * 0.45;
     const bRight = basket.x + basket.width * 0.45;
     const bTop = basket.y - basket.height * 0.2;
 
-    if(egg.y + egg.h / 2 >= bTop && egg.y - egg.h / 2 < bTop + 20 &&
-       egg.x >= bLeft && egg.x <= bRight && !egg.caught) {
+    let caughtByLocal = (egg.y + egg.h / 2 >= bTop && egg.y - egg.h / 2 < bTop + 20 &&
+                         egg.x >= bLeft && egg.x <= bRight && !egg.caught);
+
+    // 👥 Catch check (Remote Player)
+    let caughtByRemote = false;
+    if (window.isMultiplayer && typeof window.remoteBasketX !== 'undefined') {
+      const rLevel = window.remoteBasketLevel || 1;
+      const rWidth = 90 + (rLevel - 1) * 8;
+      const rbLeft = window.remoteBasketX - rWidth * 0.45;
+      const rbRight = window.remoteBasketX + rWidth * 0.45;
+      
+      caughtByRemote = (egg.y + egg.h / 2 >= bTop && egg.y - egg.h / 2 < bTop + 20 &&
+                        egg.x >= rbLeft && egg.x <= rbRight && !egg.caught);
+    }
+
+    if ((caughtByLocal || caughtByRemote) && !egg.caught) {
       egg.caught = true;
       combo++;
       comboTimer = 120;
@@ -851,7 +918,8 @@ function update() {
         if (typeof playSound === 'function') playSound('catch');
       }
 
-      spawnCatchParticles(egg.x, egg.y, type.golden ? '#ffd700' : type.bonus ? '#ff6b9d' : '#a8e6cf');
+      const catchColor = type.golden ? '#ffd700' : type.bonus ? '#ff6b9d' : '#a8e6cf';
+      spawnCatchParticles(egg.x, egg.y, catchColor);
       const label = combo >= 3 ? `+${pts} 🔥` : `+${pts}`;
       spawnFloatText(egg.x, egg.y - 20, label, type.golden ? '#ffd700' : '#ffffff');
       
@@ -927,6 +995,13 @@ function update() {
   updateFloatTexts();
 
   if(shakeTimer > 0) shakeTimer--;
+
+  // 👥 If Host, send sync state packet
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.sendMultiplayerSync === 'function') {
+      window.sendMultiplayerSync();
+    }
+  }
 }
 
 // ─── Shop & upgrades ──────────────────────────────────────────────────────────
@@ -993,6 +1068,15 @@ function drawStackedBaskets() {
 
 function feedChicken(idx) {
   const c = chickens[idx];
+  
+  // 👥 If Guest, send feed request to Host instead of doing it locally
+  if (window.isMultiplayer && !window.isHost) {
+    if (typeof window.sendMultiplayerAction === 'function') {
+      window.sendMultiplayerAction({ type: 'feed_chicken', idx: idx });
+    }
+    return;
+  }
+
   if (money >= c.feedCost) {
     money -= c.feedCost;
     c.level++;
@@ -1032,6 +1116,14 @@ function spawnHeartParticles(x, y) {
 function sellStackedBaskets() {
   if (stackedBaskets.length === 0) return;
   
+  // 👥 If Guest, send sell request to Host
+  if (window.isMultiplayer && !window.isHost) {
+    if (typeof window.sendMultiplayerAction === 'function') {
+      window.sendMultiplayerAction({ type: 'sell_baskets' });
+    }
+    return;
+  }
+  
   let totalCash = 0;
   stackedBaskets.forEach(b => {
     totalCash += b.value;
@@ -1065,6 +1157,15 @@ function sellStackedBaskets() {
 function upgradeBasket() {
   if (basketLevel >= 5) return;
   const upgrade = BASKET_UPGRADES[basketLevel]; // index basketLevel is the next level (starts at 1)
+  
+  // 👥 If Guest, send upgrade request to Host
+  if (window.isMultiplayer && !window.isHost) {
+    if (typeof window.sendMultiplayerAction === 'function') {
+      window.sendMultiplayerAction({ type: 'upgrade_basket' });
+    }
+    return;
+  }
+
   if (money >= upgrade.cost) {
     money -= upgrade.cost;
     basketLevel++;
@@ -1205,6 +1306,14 @@ function gameLoop() {
 // ─── Game flow ────────────────────────────────────────────────────────────────
 function startGame(withHand) {
   useHandTracking = withHand;
+  
+  // 👥 If Host in multiplayer, notify the Guest to start matching controls
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.sendMultiplayerStartGame === 'function') {
+      window.sendMultiplayerStartGame(withHand);
+    }
+  }
+
   score = 0;
   lives = 3;
   level = 1;
@@ -1271,6 +1380,13 @@ function endGame() {
   document.getElementById('gameover-screen').style.display = 'flex';
   document.getElementById('pause-btn').style.display = 'none';
   document.getElementById('pause-screen').style.display = 'none';
+
+  // 👥 If Host, tell Guest game is over
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.sendMultiplayerGameOver === 'function') {
+      window.sendMultiplayerGameOver(score);
+    }
+  }
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────────────
@@ -1341,7 +1457,7 @@ document.getElementById('restartBtn').addEventListener('click', () => {
 });
 
 // Pause controls
-function togglePause() {
+function togglePause(isRemoteTrigger) {
   if (state === 'playing') {
     state = 'paused';
     document.getElementById('pause-screen').style.display = 'flex';
@@ -1352,6 +1468,13 @@ function togglePause() {
     document.getElementById('pause-screen').style.display = 'none';
     document.getElementById('pause-btn').textContent = '⏸';
     document.getElementById('pause-btn').title = 'Pause Game';
+  }
+
+  // 👥 Notify other player of pause change
+  if (window.isMultiplayer && !isRemoteTrigger) {
+    if (typeof window.sendMultiplayerTogglePause === 'function') {
+      window.sendMultiplayerTogglePause();
+    }
   }
 }
 
@@ -1427,3 +1550,92 @@ resizeCanvas();
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 updateLives();
 gameLoop();
+
+// ─── Multiplayer Extensions & Event Wrappers ──────────────────────────────────
+
+// Wrap playSound to intercept clucks, catches, levelups and coin events
+const originalPlaySound = window.playSound;
+window.playSound = function(name) {
+  if (originalPlaySound) originalPlaySound(name);
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.broadcastMultiplayerEvent === 'function') {
+      window.broadcastMultiplayerEvent({ type: 'sound', name: name });
+    }
+  }
+};
+
+// Wrap particle/text spawners to broadcast events from Host to Guest
+const originalSpawnCatchParticles = window.spawnCatchParticles || spawnCatchParticles;
+window.spawnCatchParticles = function(x, y, color) {
+  originalSpawnCatchParticles(x, y, color);
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.broadcastMultiplayerEvent === 'function') {
+      window.broadcastMultiplayerEvent({ type: 'particles', category: 'catch', x, y, color });
+    }
+  }
+};
+
+const originalSpawnBreakParticles = window.spawnBreakParticles || spawnBreakParticles;
+window.spawnBreakParticles = function(x, y) {
+  originalSpawnBreakParticles(x, y);
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.broadcastMultiplayerEvent === 'function') {
+      window.broadcastMultiplayerEvent({ type: 'particles', category: 'break', x, y });
+    }
+  }
+};
+
+const originalSpawnHeartParticles = window.spawnHeartParticles || spawnHeartParticles;
+window.spawnHeartParticles = function(x, y) {
+  originalSpawnHeartParticles(x, y);
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.broadcastMultiplayerEvent === 'function') {
+      window.broadcastMultiplayerEvent({ type: 'particles', category: 'heart', x, y });
+    }
+  }
+};
+
+const originalSpawnFloatText = window.spawnFloatText || spawnFloatText;
+window.spawnFloatText = function(x, y, text, color) {
+  originalSpawnFloatText(x, y, text, color);
+  if (window.isMultiplayer && window.isHost) {
+    if (typeof window.broadcastMultiplayerEvent === 'function') {
+      window.broadcastMultiplayerEvent({ type: 'float_text', x, y, text, color });
+    }
+  }
+};
+
+// Expose Host state synchronizer to feed variables directly to the Guest
+window.setMultiplayerState = function(data) {
+  eggs = data.eggs;
+  score = data.score;
+  totalEggsCaught = data.totalEggsCaught;
+  level = data.level;
+  lives = data.lives;
+  money = data.money;
+  currentBasketValue = data.currentBasketValue;
+  basketLevel = data.basketLevel;
+  basketCapacity = data.basketCapacity;
+  
+  // Set remote player's coordinate values (Host's basket)
+  window.remoteBasketX = data.hostBasketX;
+  window.remoteBasketLevel = data.hostBasketLevel;
+  
+  // Re-fill basket elements count dummy objects
+  stackedBaskets = Array.from({length: data.stackedBasketsCount}, () => ({ value: 0 }));
+  
+  // Active chicken indicator
+  currentChickenIdx = data.activeChickenIdx;
+  eggsToLay = data.eggsToLay;
+  
+  // Sync the DOM text components
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('totalEggsVal').textContent = totalEggsCaught;
+  document.getElementById('moneyVal').textContent = '$' + money;
+  document.getElementById('levelVal').textContent = level;
+  document.getElementById('basket-bar').style.width = ((data.eggsCaughtThisLevel / basketCapacity) * 100) + '%';
+  document.getElementById('basket-text').textContent = data.eggsCaughtThisLevel + ' / ' + basketCapacity + ' eggs ($' + currentBasketValue + ')';
+  
+  updateLives();
+  updateShopUI();
+};

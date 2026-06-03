@@ -73,6 +73,23 @@
         Your camera feed stays <strong>on your device</strong> — never uploaded.
       </div>
       <div class="fallback-note">No camera? Use mouse/touch to move the basket.</div>
+      
+      <!-- Multiplayer Connection Panel -->
+      <div id="multiplayer-panel" class="multiplayer-panel">
+        <h3 class="mp-title">👥 CO-OP MULTIPLAYER</h3>
+        <div class="mp-row">
+          <div class="mp-peer-id-container">
+            <span class="mp-label">YOUR ID:</span>
+            <span id="my-peer-id" class="mp-value">Loading...</span>
+            <button id="copy-id-btn" class="mp-mini-btn" title="Copy ID">📋</button>
+          </div>
+        </div>
+        <div class="mp-row">
+          <input type="text" id="friend-id-input" placeholder="Enter Friend's Peer ID..." />
+          <button id="connect-btn" class="btn-secondary mp-btn">Connect</button>
+        </div>
+        <div id="connection-status" class="connection-status">Initializing P2P...</div>
+      </div>
     </div>
 
     <div id="gameover-screen">
@@ -116,10 +133,12 @@
 
 <div id="cam-status"></div>
 
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
 <script src="audio.js"></script>
 <script src="game.js"></script>
 <script src="handtracking.js"></script>
+<script src="multiplayer.js"></script>
 </body>
 </html>
